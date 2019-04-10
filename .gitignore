@@ -5,5 +5,10 @@
 *.py[doc]
 __pycache__/
 .ipynb_checkpoints/
+
 data/*
 !data/.gitkeep
+resources/*
+!resources/.gitkeep
+
+local_config.py
