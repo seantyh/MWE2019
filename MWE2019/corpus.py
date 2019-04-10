@@ -6,7 +6,8 @@ from typing import Iterable, Tuple
 
 Filename = str
 Text = str
-CorpusArticles = Iterable[Tuple[int, Filename, Text]]
+Article = Tuple[int, Filename, Text]
+CorpusArticles = Iterable[Article]
 logger = logging.getLogger("tetra")
 
 class CorpusFactory:
