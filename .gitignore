@@ -1,0 +1,9 @@
+*~
+*.swp
+*.tmp
+
+*.py[doc]
+__pycache__/
+.ipynb_checkpoints/
+data/*
+!data/.gitkeep
