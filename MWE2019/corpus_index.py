@@ -18,7 +18,7 @@ class CorpusIndex:
     def __init__(self, corpus_name: str, articles:CorpusArticles):
         self.corpus_name = corpus_name
         self.cache: CorpusIndexCache = {}
-        self.cache_path = Path(__file__) / \
+        self.cache_path = Path(__file__).parent / \
             f"../data/corpus_cache/{self.corpus_name}.index.pkl"
         try:
             self.load_index_cache()
@@ -32,7 +32,7 @@ class CorpusIndex:
     
     def save_index_cache(self):        
         self.cache_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.cache_path, "rb") as fout:
+        with open(self.cache_path, "wb") as fout:
             pickle.dump(self.cache, fout) 
 
     def build_index(self, articles: CorpusArticles):
