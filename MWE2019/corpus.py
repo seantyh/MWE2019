@@ -12,20 +12,20 @@ logger = logging.getLogger("tetra")
 
 class CorpusFactory:
     @classmethod
-    def GetPttCorpus(self, path):        
+    def GetPttCorpus(self, path):
         return PTTCorpus(path)
-    
+
     @classmethod
     def GetNewsCorpus(self, path):
         return NewsCorpus(path)
 
 class Corpus:
-    alpha_re = re.compile("[\w]+")    
-    def __init__(self, corpus_path):        
+    alpha_re = re.compile(r"[\w]+")
+    def __init__(self, corpus_path):
         if not os.path.exists(corpus_path):
             pdb.set_trace()
             raise ValueError("Cannot find corpus: %s" % (corpus_path,))
-        
+
         self.corpus_name = os.path.basename(corpus_path)
         self.base_path = corpus_path
 
@@ -39,28 +39,29 @@ class PTTCorpus(Corpus):
         self.skip_counter = 0
         self.article_counter = 0
         self.file_count = 0
-        
+
     def articles(self):
-        flist = os.listdir(self.base_path)        
-        for subf in flist:           
-            subcorpus_path = os.path.join(self.base_path, subf) 
+        flist = os.listdir(self.base_path)
+        flist.sort()
+        for subf in flist:
+            subcorpus_path = os.path.join(self.base_path, subf)
             if not os.path.isdir(subcorpus_path): continue
             for fi, f, art in self.get_subcorpus(subcorpus_path):
                 yield ((fi, f, art))
-            
+
     def get_subcorpus(self, subcorpus_path):
-        for fi, f in enumerate(os.listdir(subcorpus_path)):            
+        for fi, f in enumerate(os.listdir(subcorpus_path)):
             if not f.endswith(".txt"): continue
             fpath = os.path.join(subcorpus_path, f)
-            fin = open(fpath, "r", encoding="UTF-8", 
+            fin = open(fpath, "r", encoding="UTF-8",
                     errors = "backslashreplace", newline = "\r\n")
             for art in self.get_subcorpus_articles(fin):
                 yield((fi, f, art))
             logger.info("[%s] %s:%d / %d" % (self.corpus_name, f, fi,
                 self.file_count))
             self.file_count += 1
-            fin.close()                
-            
+            fin.close()
+
     def get_subcorpus_articles(self, fs):
         ln_mode = 0
         title = ""
@@ -69,7 +70,7 @@ class PTTCorpus(Corpus):
         for ln in fs.readlines():
             lp_idx = ln.find("(")
             # pdb.set_trace()
-            if ln.startswith("https://"): 
+            if ln.startswith("https://"):
                 ln_mode = 1
             elif ln_mode == 1 and lp_idx > 0 and ln.find(")") > lp_idx:
                 ln_mode = 2
@@ -85,7 +86,7 @@ class PTTCorpus(Corpus):
                 ln_mode = 0
             else:
                 ln_mode = -1
-                        
+
             if ln_mode == 1:
                 url = ln.strip()
             elif ln_mode == 4:
@@ -93,11 +94,11 @@ class PTTCorpus(Corpus):
             elif ln_mode == 0:
                 self.article_counter += 1
                 yield prev_line
-            
+
             prev_line = ln
 
 class NewsCorpus(Corpus):
-    date_re = re.compile("[\d\/]\s+$")
+    date_re = re.compile(r"[\d\/]\s+$")
     def __init__(self, corpus_name):
         super().__init__(corpus_name)
         self.skip_counter = 0
@@ -106,10 +107,11 @@ class NewsCorpus(Corpus):
 
     def articles(self):
         flist = os.listdir(self.base_path)
+        flist.sort()
         for fi, f in enumerate(flist):
             if not f.endswith(".txt"): continue
             fpath = os.path.join(self.base_path, f)
-            fin = open(fpath, "r", encoding="UTF-8", 
+            fin = open(fpath, "r", encoding="UTF-8",
                     errors = "backslashreplace", newline = "\r\n")
             for art in self.get_articles(fin):
                 yield((fi, f, art))
@@ -128,15 +130,15 @@ class NewsCorpus(Corpus):
                     ln_mode = 0
                 else:
                     ln_mode += 1
-                
+
                 if ln_mode == 0:
-                    self.article_counter += 1                    
+                    self.article_counter += 1
                     yield title_line + prev_ln
                 elif ln_mode == 1:
                     title_line = ln
                 else:
                     pass
-                
+
                 prev_ln = ln
         except (UnicodeDecodeError, TypeError) as ex:
             print(ex)
