@@ -2,11 +2,7 @@ import pickle
 from typing import List, Tuple, Set, Dict
 from pathlib import Path
 from .corpus import CorpusArticles
-try:
-    get_ipython()
-    from tqdm import tqdm_notebook as tqdm    
-except NameError:
-    from tqdm import tqdm
+from .utils import tqdm
 
 Character = str
 CorpusCacheId = str
