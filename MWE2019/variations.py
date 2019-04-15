@@ -79,9 +79,8 @@ class VariationFinder:
             for category, pat in pat_list:
                 matches = pat.findall(art_text)
                 matches = [x for x in matches if x != sample_x[1]]
-                match_results[category] += len(matches)           
-                var_text[category] = matches
-
+                match_results[category] += len(matches)                   
+                var_text.setdefault(category, []).extend(matches)        
         self.vardb.save(sample_x, var_text)
         # update mat_results to var_results
         sample_results: Tuple[Sample, MatchResult] = (

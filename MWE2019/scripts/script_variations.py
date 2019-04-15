@@ -84,11 +84,11 @@ def build_ngram4_dframe(is_debug=False):
 
 def sample_seeds(rnd_seed, ngram4, sample_ratio=0.05):
     np.random.seed(rnd_seed)
-    ngram4_todo = ngram4.loc[ngram4.ins >= 0, :]    
+    ngram4_todo = ngram4.loc[ngram4.ins < 0, :]    
     rand_vec = np.random.random(ngram4_todo.shape[0])    
     selected_idx = np.argwhere(rand_vec < sample_ratio).flatten().tolist()
 
-    samples = []
+    samples = []    
     for ridx, row in ngram4_todo.iloc[selected_idx, :].iterrows():        
         samples.append((ridx, row.ngram))
     return samples

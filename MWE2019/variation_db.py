@@ -22,7 +22,7 @@ class VariationDb:
             "ngram_id": sample[0], 
             "ngram": sample[1],             
             "variations": data}
-        ins_res = self.coll.insert_one(var_doc)        
+        ins_res = self.coll.insert_one(var_doc)           
         return ins_res.inserted_id
     
     def load(self, sample: "Sample"):
