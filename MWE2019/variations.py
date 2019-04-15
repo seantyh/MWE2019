@@ -1,7 +1,9 @@
 import re
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Iterable
 from .corpus import CorpusArticles, Article
-from tqdm import tqdm_notebook as tqdm
+from .corpus_index import CorpusIndex
+from .variation_db import VariationDb
+from .utils import tqdm
 from multiprocessing import Pool
 
 NGram = str
@@ -14,14 +16,13 @@ VarResult = Tuple[VarCategory, int]
 VarResults = Dict[Sample, List[VarResult]]
 
 class VariationFinder:
-    def __init__(self, seeds: List[Sample]):
+    def __init__(self, seeds: List[Sample], vardb: VariationDb):
         self.samples = seeds
-        self.sample_patterns = []
-        self.variation_results = {}
-        print("pre-compiling variation patterns")
-        for sample_x in tqdm(self.samples):
+        self.sample_patterns = []                
+        for sample_x in tqdm(self.samples, ascii=True, desc="precompile patterns"):
             pat_x = self.make_variation_patterns(sample_x[1])
             self.sample_patterns.append(pat_x)
+        self.vardb = vardb
 
     def make_variation_patterns(self, seed) -> List[VarPatterns]:
         CJK = "\u3400-\u9fff"
@@ -33,19 +34,14 @@ class VariationFinder:
             # substitution
             sub_x = seed_chars.copy()
             sub_x[i] = f"[{CJK}]"
-            sub_templ.append("".join(sub_x))
-            patterns.append(("sub", re.compile("".join(sub_x))))
+            sub_templ.append("".join(sub_x))            
+            patterns.append((f"sub{i+1}", re.compile("".join(sub_x))))
 
             # deletion
             del_x = seed_chars.copy()
             del del_x[i]
             del_templ.append("".join(del_x))
-            patterns.append(("del", re.compile("".join(del_x))))
-
-        # sub_pat = re.compile("|".join(sub_templ))
-        # del_pat = re.compile("|".join(del_templ))
-        # patterns.append(("sub", sub_pat))
-        # patterns.append(("del", del_pat))
+            patterns.append((f"del{i+1}", re.compile("".join(del_x))))
 
         # insertions
         ins_templ = []
@@ -57,39 +53,39 @@ class VariationFinder:
         patterns.append(('ins', pat_ins))
         return patterns
 
-    def search_in_corpus(self, corpus_articles: CorpusArticles, use_cores=1):
-        sample_data = list(zip(self.samples, self.sample_patterns))
-
-        from functools import partial
-
-        worker_wrapper = partial(self.search_in_corpus_worker, sample_data)
-        with Pool(use_cores) as pool:
-            worker_results = list(tqdm(pool.imap(worker_wrapper, corpus_articles, 10), 
-                            total=len(corpus_articles),
-                            desc="mapping works"))
-
-        for worker_result in tqdm(worker_results, desc="reduce work results"):
-            for sample_x, mat_results in worker_result:
-                var_result = self.variation_results.setdefault(sample_x, {})
-                for category in mat_results.keys():                    
-                    var_result[category] = var_result.get(category, 0) + mat_results[category]
-        return self.variation_results
-
-    def search_in_corpus_worker(self,
-            sample_data: List[Tuple[Sample, List[VarPatterns]]],
-            article: Article) -> SampleResults:
+    def search_in_corpus(self, corpus_articles: CorpusArticles, 
+        corpus_index: CorpusIndex,
+        use_cores=1) -> SampleResults:
 
         sample_results: SampleResults = []
-        _, _, art_text = article
-        for sample_x, pat_list in sample_data:
-            mat_results = {"ins": 0, "del": 0, "sub": 0}
+        sample_data = list(zip(self.samples, self.sample_patterns))
+        for sample_data_x in tqdm(sample_data, ascii=True, desc="search patterns in corpus"):
+            sample_x, _ = sample_data_x
+            seed_x = sample_x[1]
+            hit_indices = corpus_index.search_all_of([seed_x[0], seed_x[-1]])                        
+            hit_iter = (corpus_articles[art_i] for art_i in hit_indices)
+            match_x = self.search_in_articles(sample_data_x, hit_iter)
+            sample_results.append(match_x)
+        return sample_results
+
+    def search_in_articles(self,
+            sample_data: Tuple[Sample, List[VarPatterns]],
+            articles: Iterable[Article]) -> Tuple[Sample, MatchResult]:
+
+        match_results = {cat: 0 for cat, _ in sample_data[1]}
+        sample_x, pat_list = sample_data
+        var_text = {}
+        for _, _, art_text in articles:            
             for category, pat in pat_list:
                 matches = pat.findall(art_text)
                 matches = [x for x in matches if x != sample_x[1]]
-                mat_results[category] += len(matches)
-            sample_results.append((sample_x, mat_results))
+                match_results[category] += len(matches)           
+                var_text[category] = matches
 
+        self.vardb.save(sample_x, var_text)
         # update mat_results to var_results
-
+        sample_results: Tuple[Sample, MatchResult] = (
+            sample_x, match_results
+        )
         return sample_results
 

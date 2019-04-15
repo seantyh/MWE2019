@@ -1,5 +1,5 @@
 import pickle
-from typing import List, Tuple, Set, Dict
+from typing import List, Tuple, Set, Dict, Iterable
 from pathlib import Path
 from .corpus import CorpusArticles
 from .utils import tqdm
@@ -17,10 +17,14 @@ class CorpusIndex:
         self.cache_path = Path(__file__).parent / \
             f"../data/corpus_cache/{self.corpus_name}.index.pkl"
         try:
+            print("try loading index...", end='')
             self.load_index_cache()
-        except FileNotFoundError as ex:
+            print('OK')
+        except FileNotFoundError as ex:            
             self.build_index(articles)
+            print("Saving index...", end='')
             self.save_index_cache()
+            print("Done")
     
     def load_index_cache(self):        
         with open(self.cache_path, "rb") as fin:
@@ -33,13 +37,13 @@ class CorpusIndex:
 
     def build_index(self, articles: CorpusArticles):
         cache = self.cache
-        for fi, f, text in tqdm(articles):
+        for fi, f, text in tqdm(articles, ascii=True, desc="building article index"):
             for ch in set(text):
                 if not "\u3400" < ch < "\u9fff":
                     continue
                 cache.setdefault(ch, []).append(fi)
 
-    def search_all_of(self, chars:List[str])\
+    def search_all_of(self, chars:Iterable[str])\
         -> CorpusArticles:
         cache = self.cache
         if chars:
@@ -47,3 +51,4 @@ class CorpusIndex:
         for ch in chars[1:]:
             hit_articles.intersection_update(cache.get(ch, []))
         return list(hit_articles)
+        
