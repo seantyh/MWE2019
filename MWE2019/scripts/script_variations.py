@@ -39,13 +39,11 @@ def script_variations(**kwargs):
     print("loading articles")
     if DEBUG:
         corpus_articles = take_articles(corpus.articles(), 1000)
-        NGRAM4_DFRAME_PATH = Path(__file__).parent / "../../data/ngram4_variation_dbg.csv"
-        corpus_name += "_dbg"
-    else:
-        NGRAM4_DFRAME_PATH = Path(__file__).parent / "../../data/ngram4_variation.csv"
+        corpus_name += "_dbg"        
+    else:        
         corpus_articles = list(tqdm(corpus.articles()))
+    NGRAM4_DFRAME_PATH = Path(__file__).parent / f"../../data/qievars_{corpus_name}.csv"
 
-    
     ## connect to mongodb
     mongo = MongoClient(local_config.MONGO_HOST, local_config.MONGO_PORT)
     vardb = VariationDb(mongo, corpus_name)
@@ -65,7 +63,7 @@ def script_variations(**kwargs):
     ## prepare writing out
     write_snapshot(ngram4, str(NGRAM4_DFRAME_PATH))
     update_results(sample_results, ngram4)
-    print('Saving ngram4_variation to file...', end='')
+    print('Saving qie variation to file...', end='')
     ngram4.to_csv(NGRAM4_DFRAME_PATH, index=False)
     print('Done')
 
@@ -84,11 +82,12 @@ def build_ngram4_dframe(is_debug=False):
 
 def sample_seeds(rnd_seed, ngram4, sample_ratio=0.05):
     np.random.seed(rnd_seed)
-    ngram4_todo = ngram4.loc[ngram4.ins < 0, :]    
-    rand_vec = np.random.random(ngram4_todo.shape[0])    
-    selected_idx = np.argwhere(rand_vec < sample_ratio).flatten().tolist()
+    ngram4_todo = ngram4.loc[ngram4.ins < 0, :]
+    rand_vec = np.random.random(ngram4_todo.shape[0])
+    rand_idx = np.argsort(rand_vec).flatten().tolist()
+    selected_idx = rand_idx[:int(ngram4_todo.shape[0] * sample_ratio)]
 
-    samples = []    
+    samples = []
     for ridx, row in ngram4_todo.iloc[selected_idx, :].iterrows():        
         samples.append((ridx, row.ngram))
     return samples
@@ -103,8 +102,8 @@ def take_articles(art_it, n=10):
 
 def update_results(sample_results: SampleResults, ngram4: pd.DataFrame):
     for sample_x, mat_result in tqdm(sample_results, ascii=True, desc="update results"):
-        sample_id = sample_x[0]
-        for field_names in FIELD_NAMES:
+        sample_id = sample_x[0]        
+        for field_names in FIELD_NAMES:            
             ngram4.loc[sample_id, field_names] = mat_result[field_names]
 
 

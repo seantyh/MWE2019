@@ -16,16 +16,9 @@ VarResult = Tuple[VarCategory, int]
 VarResults = Dict[Sample, List[VarResult]]
 
 class VariationFinder:
-    def __init__(self, seeds: List[Sample], vardb: VariationDb):
+    def __init__(self, seeds: List[Sample], vardb: VariationDb=None):
         self.samples = seeds
-        self.sample_patterns = []                
-        for sample_x in tqdm(self.samples, ascii=True, desc="precompile patterns"):
-            try:
-                pat_x = self.make_variation_patterns(sample_x[1])
-                self.sample_patterns.append(pat_x)
-            except Exception as ex:
-                print(ex)
-                continue
+        self.sample_patterns = []                        
         self.vardb = vardb
 
     def make_variation_patterns(self, seed) -> List[VarPatterns]:
@@ -61,15 +54,13 @@ class VariationFinder:
         corpus_index: CorpusIndex,
         use_cores=1) -> SampleResults:
 
-        sample_results: SampleResults = []
-        sample_data = list(zip(self.samples, self.sample_patterns))
-        for sample_data_x in tqdm(sample_data, ascii=True, desc="search patterns in corpus"):            
-            try:
-                sample_x, _ = sample_data_x
+        sample_results: SampleResults = []        
+        for sample_x in tqdm(self.samples, ascii=True, desc="search patterns in corpus"):            
+            try:                
                 seed_x = sample_x[1]
                 hit_indices = corpus_index.search_all_of([seed_x[0], seed_x[-1]])                        
                 hit_iter = (corpus_articles[art_i] for art_i in hit_indices)
-                match_x = self.search_in_articles(sample_data_x, hit_iter)
+                match_x = self.search_in_articles(sample_x, hit_iter)
                 sample_results.append(match_x)
             except Exception as ex:
                 print(ex)
@@ -77,11 +68,11 @@ class VariationFinder:
         return sample_results
 
     def search_in_articles(self,
-            sample_data: Tuple[Sample, List[VarPatterns]],
+            sample_x: Sample,
             articles: Iterable[Article]) -> Tuple[Sample, MatchResult]:
-
-        match_results = {cat: 0 for cat, _ in sample_data[1]}
-        sample_x, pat_list = sample_data
+                
+        pat_list = self.make_variation_patterns(sample_x[1])        
+        match_results = {cat: 0 for cat, _ in pat_list}        
         var_text = {}
         for _, _, art_text in articles:            
             for category, pat in pat_list:
@@ -89,7 +80,9 @@ class VariationFinder:
                 matches = [x for x in matches if x != sample_x[1]]
                 match_results[category] += len(matches)                   
                 var_text.setdefault(category, []).extend(matches)        
-        self.vardb.save(sample_x, var_text)
+        
+        if self.vardb:
+            self.vardb.save(sample_x, var_text)
         # update mat_results to var_results
         sample_results: Tuple[Sample, MatchResult] = (
             sample_x, match_results
