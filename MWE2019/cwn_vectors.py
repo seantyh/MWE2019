@@ -42,7 +42,10 @@ class CwnVectors:
             self.build_vectors(cwn_lemmas, pt_vectors, word_freq)
             self.write_cache()
         else:
-            self.from_cache()
+            try:
+                self.from_cache()
+            except:
+                pass
 
     def build_vectors(self, cwn_lemmas, pt_vectors, word_freq):
         lemmas = set(cwn_lemmas.copy())
