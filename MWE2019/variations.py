@@ -20,8 +20,12 @@ class VariationFinder:
         self.samples = seeds
         self.sample_patterns = []                
         for sample_x in tqdm(self.samples, ascii=True, desc="precompile patterns"):
-            pat_x = self.make_variation_patterns(sample_x[1])
-            self.sample_patterns.append(pat_x)
+            try:
+                pat_x = self.make_variation_patterns(sample_x[1])
+                self.sample_patterns.append(pat_x)
+            except Exception as ex:
+                print(ex)
+                continue
         self.vardb = vardb
 
     def make_variation_patterns(self, seed) -> List[VarPatterns]:
@@ -59,13 +63,17 @@ class VariationFinder:
 
         sample_results: SampleResults = []
         sample_data = list(zip(self.samples, self.sample_patterns))
-        for sample_data_x in tqdm(sample_data, ascii=True, desc="search patterns in corpus"):
-            sample_x, _ = sample_data_x
-            seed_x = sample_x[1]
-            hit_indices = corpus_index.search_all_of([seed_x[0], seed_x[-1]])                        
-            hit_iter = (corpus_articles[art_i] for art_i in hit_indices)
-            match_x = self.search_in_articles(sample_data_x, hit_iter)
-            sample_results.append(match_x)
+        for sample_data_x in tqdm(sample_data, ascii=True, desc="search patterns in corpus"):            
+            try:
+                sample_x, _ = sample_data_x
+                seed_x = sample_x[1]
+                hit_indices = corpus_index.search_all_of([seed_x[0], seed_x[-1]])                        
+                hit_iter = (corpus_articles[art_i] for art_i in hit_indices)
+                match_x = self.search_in_articles(sample_data_x, hit_iter)
+                sample_results.append(match_x)
+            except Exception as ex:
+                print(ex)
+                continue
         return sample_results
 
     def search_in_articles(self,
