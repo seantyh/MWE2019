@@ -3,3 +3,4 @@ scipy
 torchtext
 pandas
 networkx
+node2vec

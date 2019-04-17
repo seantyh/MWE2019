@@ -6,9 +6,11 @@
 __pycache__/
 .ipynb_checkpoints/
 
+references/*
 data/*
 !data/.gitkeep
 resources/*
 !resources/.gitkeep
+!.gitkeep
 
 local_config.py

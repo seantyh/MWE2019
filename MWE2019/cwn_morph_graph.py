@@ -25,7 +25,13 @@ class CwnMorphGraph:
             self.populate_morphologies(cwn_vec)
             self.write_cache()
         else:
-            self.load_cache()
+            try:
+                self.load_cache()                
+            except:                
+                print("[Error] Cannot load from cache")
+                print("build CwnMorphGraph from python main.py -t morphgraph")
+                raise ValueError()
+
 
     def write_cache(self):
         cache_path = CwnMorphGraph.cache_path
@@ -35,6 +41,7 @@ class CwnMorphGraph:
     def load_cache(self):
         cache_path = CwnMorphGraph.cache_path
         self.G = nx.read_gpickle(cache_path)
+        print("graph loaded from ", cache_path)
 
     def to_dot(self):
         self.G.graph.setdefault("node", {})

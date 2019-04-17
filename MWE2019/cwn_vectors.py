@@ -45,7 +45,9 @@ class CwnVectors:
             try:
                 self.from_cache()
             except:
-                pass
+                print("[Error] Cannot load from cache")
+                print("build CwnVectors from python main.py -t cwnvectors")
+                raise ValueError()
 
     def build_vectors(self, cwn_lemmas, pt_vectors, word_freq):
         lemmas = set(cwn_lemmas.copy())
