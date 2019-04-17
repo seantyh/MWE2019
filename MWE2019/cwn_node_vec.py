@@ -15,7 +15,7 @@ class CwnNodeVec:
         self.itos = None
         self.stoi = None
         try:
-            self.load_cache()
+            self.load_cache()            
         except FileNotFoundError:            
             cwn_vec = CwnVectors()
             cwn_mg = CwnMorphGraph()
@@ -35,7 +35,8 @@ class CwnNodeVec:
         cache_dir = CwnNodeVec.cache_dir
         cache_path = cache_dir / CwnNodeVec.cache_fname.format(suffix=self.name)
         with open(cache_path, "rb") as fin:
-            self.embed, self.stoi, self.itos = pickle.load(fin)
+            self.embed, self.stoi, self.itos = pickle.load(fin)            
+        print("load CwnNodeVec from cache: ", cache_path)
     
     def build_node_vec(self, cwn_mg: CwnMorphGraph, cwn_vec: CwnVectors, **kwargs):
         n_dim = kwargs.get("dimensions", 100)
