@@ -37,11 +37,13 @@ class CorpusIndex:
 
     def build_index(self, articles: CorpusArticles):
         cache = self.cache
+        art_counter = 0
         for fi, f, text in tqdm(articles, ascii=True, desc="building article index"):
             for ch in set(text):
                 if not "\u3400" < ch < "\u9fff":
-                    continue
-                cache.setdefault(ch, []).append(fi)
+                    continue                
+                cache.setdefault(ch, []).append(art_counter)
+            art_counter += 1
 
     def search_all_of(self, chars:Iterable[str])\
         -> CorpusArticles:

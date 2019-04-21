@@ -2,6 +2,7 @@ import re
 from collections import Counter
 from itertools import chain
 from typing import Iterable
+import numpy as np
 from ..corpus import CorpusArticles, Article
 from ..corpus_index import CorpusIndex
 
@@ -16,7 +17,7 @@ class QieContext:
         context = []
         try:                            
             hit_indices = self.corpus_index.search_all_of(ngram)            
-            hit_iter = (self.articles[art_i] for art_i in hit_indices)            
+            hit_iter = [self.articles[art_i] for art_i in hit_indices]
             mat_context = self.search_sentence(ngram, hit_iter)
             context.extend(mat_context)
         except Exception as ex:
