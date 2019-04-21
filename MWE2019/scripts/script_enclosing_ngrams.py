@@ -50,20 +50,22 @@ def script_enclosing_ngrams(**kwargs):
     for seed_x in tqdm(seeds, ascii=True):
         ng_counter = enc.search_enclosing(seed_x)
         enc_freq = -1
+        enc_ngram = ""
         if ng_counter:           
             try:
                 # find the frequency of the most common one
-                enc_freq = ng_counter.most_common(1)[0][1]
+                enc_ngram, enc_freq = ng_counter.most_common(1)[0]
             except Exception as ex:
                 if not debug:                
                     print(ex)                
-                continue
-        enc_results[seed_x] = enc_freq
+                continue        
+        enc_results[seed_x] = [enc_ngram, enc_freq]
+        if len(enc_results) > 10: break
 
     # output results    
     install_data_cache(DIR_NAME)
     out_path = get_cache_path(DIR_NAME, f"enclosing_{corpus_name}.csv")
-    enc_df = pd.DataFrame.from_dict(enc_results, orient='index', columns=['encfreq'])
+    enc_df = pd.DataFrame.from_dict(enc_results, orient='index', columns=['ngram', 'encfreq'])
     enc_df.to_csv(out_path)
     print("EnclosingNGrams write to ", out_path)
 
