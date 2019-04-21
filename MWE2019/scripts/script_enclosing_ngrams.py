@@ -60,7 +60,6 @@ def script_enclosing_ngrams(**kwargs):
                     print(ex)                
                 continue        
         enc_results[seed_x] = [enc_ngram, enc_freq]
-        if len(enc_results) > 10: break
 
     # output results    
     install_data_cache(DIR_NAME)
