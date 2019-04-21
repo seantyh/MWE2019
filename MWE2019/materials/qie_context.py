@@ -24,10 +24,10 @@ class QieContext:
         return context
 
     def search_sentence(self, ngram: str, hit_iter: Iterable[Article]) -> Counter:
-        ctx_list = []
-        ctx_pat = re.compile(f'{ngram}.*。')        
-        # ctx_pat = re.compile(f'[。！？!?](.*?{ngram}.*?)[。！？!?]')        
+        ctx_list = []        
+        sent_delim = re.compile("[。！？!?\r\n]")
         for _, _, article_text in hit_iter:
-            matches = ctx_pat.findall(article_text)            
+            sentences = sent_delim.split(article_text)
+            matches = [x for x in sentences if ngram in x]            
             ctx_list.extend(matches)
         return ctx_list
