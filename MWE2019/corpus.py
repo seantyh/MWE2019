@@ -47,7 +47,8 @@ class PTTCorpus(Corpus):
             subcorpus_path = os.path.join(self.base_path, subf)
             if not os.path.isdir(subcorpus_path): continue
             for fi, f, art in self.get_subcorpus(subcorpus_path):
-                yield ((fi, f, art))
+                yield ((self.article_counter, f, art))
+                self.article_counter += 1
 
     def get_subcorpus(self, subcorpus_path):
         for fi, f in enumerate(os.listdir(subcorpus_path)):
@@ -91,8 +92,7 @@ class PTTCorpus(Corpus):
                 url = ln.strip()
             elif ln_mode == 4:
                 title = ln.strip()
-            elif ln_mode == 0:
-                self.article_counter += 1
+            elif ln_mode == 0:                
                 yield prev_line
 
             prev_line = ln
@@ -113,8 +113,9 @@ class NewsCorpus(Corpus):
             fpath = os.path.join(self.base_path, f)
             fin = open(fpath, "r", encoding="UTF-8",
                     errors = "backslashreplace", newline = "\r\n")
-            for art in self.get_articles(fin):
-                yield((fi, f, art))
+            for art in self.get_articles(fin):                
+                yield((self.article_counter, f, art))    
+                self.article_counter += 1            
             logger.info("[%s] %s:%d / %d" % (self.corpus_name, f, fi,
                 self.file_count))
             fin.close()
@@ -131,8 +132,7 @@ class NewsCorpus(Corpus):
                 else:
                     ln_mode += 1
 
-                if ln_mode == 0:
-                    self.article_counter += 1
+                if ln_mode == 0:                    
                     yield title_line + prev_ln
                 elif ln_mode == 1:
                     title_line = ln
