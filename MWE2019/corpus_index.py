@@ -48,7 +48,8 @@ class CorpusIndex:
         cache = self.cache
         if chars:
             hit_articles = set(cache.get(chars[0], []))
-        for ch in chars[1:]:
+        for ch in chars[1:]:            
             hit_articles.intersection_update(cache.get(ch, []))
+            
         return list(hit_articles)
         
