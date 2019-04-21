@@ -32,7 +32,7 @@ class MoeIdioms:
 class _MoeIdioms:    
     def __init__(self):
         data_path = Path(__file__).parent / \
-            "../resources/dict_idioms_2011_20190329.csv"
+            "../../resources/dict_idioms_2011_20190329.csv"
         self.idioms = {}
         self.load_idioms(data_path)        
     
