@@ -1,5 +1,6 @@
 from collections import Counter
 from pathlib import Path
+from functools import reduce
 import pickle
 from ..utils import install_data_cache, get_cache_path
 from ..utils import tqdm
@@ -15,6 +16,7 @@ class NGram4List:
             self.build_ngrams_list()
             print("Done")
             print("Computing pmi...", end='')
+            self.chfreq = self.load_unigram()
             self.compute_pmi()
             print("Done")
             self.write_cache()            
@@ -48,22 +50,26 @@ class NGram4List:
         self.merged_df = merged_df
         return merged_df
 
-    def compute_pmi(self):
+    def load_unigram(self):
         # load unigram        
         unigram_path = get_cache_path("cache_corpus_unigram", "unigram.pkl")
         with open(unigram_path, "rb") as fin:
             unigram = pickle.load(fin)    
             chfreq = Counter({k: v for k, v in unigram.items() if "\u3400" < k < "\u9fff"})
+        return chfreq
+
+    def compute_pmi(self):
+        chfreq = self.chfreq
         
         merged_df = self.merged_df
-        merged_df.pmi = np.nan        
+        merged_df["pmi"] = np.nan        
         for ridx, row in tqdm(merged_df.iterrows(), 
                 ascii=True, total=merged_df.shape[0]):
             ngram = ridx
             cf_vec = [chfreq.get(x, 1) for x in ngram]
             pmi = np.log(row.freq) - np.sum(np.log(cf_vec))
             merged_df.loc[ridx, "pmi"] = pmi
-        self.merged_df = merged_df
+        self.merged_df = merged_df               
 
     def load_cache(self):
         cache_path = get_cache_path('cache_ngrams_list', 'ngrams_var_list.csv')
