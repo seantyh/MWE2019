@@ -56,8 +56,8 @@ class Materials:
             `{len(set(self.chFreq.keys()).intersection(self.charM.keys()))}`, and
             `{len(set(self.chFreq.keys()).difference(self.charM.keys()))}` of them are only presented in 
             ngrams but not in CWN.
-          * Those characters not in CWN account for `{self.describe_cwn_char_diff()*100:.4f}`% 
-            in all character frequency.
+          * Some characters do not have S-vectors due to data problem, only 1983 characters have 
+            valid senses and S-vectors          
 
         ### Frequency
           * NGram frequency (`ngFreq`): Frequency of QIEs and idioms in 1.3 billion corpus
