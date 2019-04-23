@@ -3,3 +3,4 @@ from .ngrams_list import NGram4List
 from .qie_context import QieContext
 from .redis_corpus import RedisCorpus
 from .enclosing import compute_enclosing
+from .materials import Materials
