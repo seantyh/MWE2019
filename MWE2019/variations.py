@@ -44,10 +44,11 @@ class VariationFinder:
         ins_templ = []
         for x in seed_chars:
             ins_templ.append(x)
-            ins_templ.append(".{,10}?")
+            ins_templ.append(".{,5}?")
         ins_templ = ins_templ[:-1]
         pat_ins = re.compile("".join(ins_templ))
         patterns.append(('ins', pat_ins))
+        
         return patterns
 
     def search_in_corpus(self, corpus_articles: CorpusArticles, 

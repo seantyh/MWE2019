@@ -82,3 +82,60 @@ class NGram4List:
         cache_path = get_cache_path('cache_ngrams_list', 'ngrams_var_list.csv')
         self.merged_df.to_csv(cache_path)
         print("NGram4List cache to ", cache_path)
+    
+class NGram4SampleList:
+    def __init__(self):
+        try:
+            self.load_cache()
+        except:
+            print("Building ngrams list...", end='')
+            self.build_ngrams_list()
+            print("Done")                        
+            self.write_cache()            
+
+    def __contains__(self, x):
+        return x in self.merged_df.index
+
+    def __iter__(self):
+        for ngram in self.merged_df.index:
+            yield ngram
+    
+    def get_data(self, ngram):
+        return self.merged_df.loc[ngram, :]
+
+    def build_ngrams_list(self):
+        var_df = []
+        for corpus_name in ('apple', 'chinatimes', 'ptt'):
+            var_path = get_cache_path('variations', f'ngrams_vars_{corpus_name}_sample.csv')
+            if not var_path.exists():
+                continue
+            corpus_df = pd.read_csv(var_path, index_col=0)
+            corpus_df.set_index(['ngram'], inplace=True)
+            corpus_df.rename(columns={x: x+f'.{corpus_name[0].upper()}' 
+                                for x in corpus_df.columns}, inplace=True)            
+            var_df.append(corpus_df)
+            
+        merged_df = var_df[0]
+        for df_x in var_df[1:]:
+            merged_df = merged_df.join(df_x)        
+        
+        merged_df["var"] = merged_df.loc[:,[
+            "sub2.A", "sub3.A", "ins.A",
+            "sub2.C", "sub3.C", "ins.C",
+            "sub2.P", "sub3.P", "ins.P",
+        ]].sum(1)
+
+        self.merged_df = merged_df
+        return merged_df
+
+    def load_cache(self):
+        cache_path = get_cache_path('cache_ngrams_list', 'ngrams_vars_samples.csv')
+        self.merged_df = pd.read_csv(cache_path)
+        self.merged_df.set_index('ngram', inplace=True)
+        print("NGram4SampleList loaded: ", cache_path)
+    
+    def write_cache(self):
+        install_data_cache('cache_ngrams_list')
+        cache_path = get_cache_path('cache_ngrams_list', 'ngrams_vars_samples.csv')
+        self.merged_df.to_csv(cache_path)
+        print("NGram4SampleList cache to ", cache_path)

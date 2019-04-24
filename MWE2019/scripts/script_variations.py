@@ -11,11 +11,13 @@ from ..corpus import CorpusFactory
 from ..corpus_index import CorpusIndex
 from ..variations import VariationFinder, SampleResults
 from ..variation_db import VariationDb
+from ..utils import get_cache_path, install_data_cache
 
 logger = logging.getLogger("script_variation")
 FIELD_NAMES = ["sub2", "del2", "sub3", "del3", "ins"]
 
-def script_variations(**kwargs):
+def script_variations(**kwargs):    
+
     try:
         corpus_name = kwargs["corpus"]
     except KeyError as ex:
@@ -35,14 +37,17 @@ def script_variations(**kwargs):
         logger.error("unrecognized corpus")
         return
 
+    install_data_cache('variations')
 
     print("loading articles")
     if DEBUG:
         corpus_articles = take_articles(corpus.articles(), 1000)
-        corpus_name += "_dbg"        
-    else:        
-        corpus_articles = list(tqdm(corpus.articles()))
-    NGRAM4_DFRAME_PATH = Path(__file__).parent / f"../../data/qievars_{corpus_name}.csv"
+        corpus_name += "_dbg"            
+    else:
+        rs = np.random.RandomState(5222)  # pylint: disable=no-member
+        corpus_articles = [x for x in tqdm(corpus.articles()) if rs.rand() < sample_ratio]
+        corpus_name += "_sample"
+    NGRAM4_DFRAME_PATH = get_cache_path('variations', f"ngrams_vars_{corpus_name}.csv")
 
     ## connect to mongodb
     mongo = MongoClient(local_config.MONGO_HOST, local_config.MONGO_PORT)
@@ -53,8 +58,8 @@ def script_variations(**kwargs):
         ngram4 = pd.read_csv(NGRAM4_DFRAME_PATH)
     else:
         ngram4 = build_ngram4_dframe(DEBUG)
-    seeds = sample_seeds(rnd_seed, ngram4, sample_ratio)
-
+    seeds = list(ngram4.ngram.iteritems())
+    
     ## initialize VariationFinder
     var_finder = VariationFinder(seeds, vardb)
     corpus_index = CorpusIndex(corpus_name, corpus_articles)
@@ -68,29 +73,12 @@ def script_variations(**kwargs):
     print('Done')
 
 def build_ngram4_dframe(is_debug=False):
-    NGRAM_BASE_PATH = Path(__file__).parent / "../../resources/ngram_4.csv"
+    NGRAM_BASE_PATH = get_cache_path('cache_ngrams_list', 'ngrams_list.csv')
     ngram4 = pd.read_csv(NGRAM_BASE_PATH)
-
-    if is_debug:
-        ngram4 = ngram4.iloc[:1000, :]
-    else:
-        ## see etc/select_ngrams.ipynb for the rationale of 322 threshold
-        ngram4 = ngram4.loc[ngram4.freq >= 322, :]
+    
     for field_names in FIELD_NAMES:
-        ngram4[field_names] = -1
+        ngram4[field_names] = -1    
     return ngram4
-
-def sample_seeds(rnd_seed, ngram4, sample_ratio=0.05):
-    np.random.seed(rnd_seed)
-    ngram4_todo = ngram4.loc[ngram4.ins < 0, :]
-    rand_vec = np.random.random(ngram4_todo.shape[0])
-    rand_idx = np.argsort(rand_vec).flatten().tolist()
-    selected_idx = rand_idx[:int(ngram4_todo.shape[0] * sample_ratio)]
-
-    samples = []
-    for ridx, row in ngram4_todo.iloc[selected_idx, :].iterrows():        
-        samples.append((ridx, row.ngram))
-    return samples
 
 def sample_articles(art_it, ratio=0.05):
     articles = [x for x in art_it if np.random.random() < ratio]
@@ -103,7 +91,7 @@ def take_articles(art_it, n=10):
 def update_results(sample_results: SampleResults, ngram4: pd.DataFrame):
     for sample_x, mat_result in tqdm(sample_results, ascii=True, desc="update results"):
         sample_id = sample_x[0]        
-        for field_names in FIELD_NAMES:            
+        for field_names in FIELD_NAMES:                        
             ngram4.loc[sample_id, field_names] = mat_result[field_names]
 
 

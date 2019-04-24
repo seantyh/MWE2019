@@ -28,16 +28,20 @@ class Materials:
         self.charM: Dict[Character, MVector] = {}
         self.charS: Dict[Character, SVector] = {}
         self.ngramS: Dict[NGram, SVector] = {}
-        
+        self.variations: Dict[NGram, int] = {}
+
         ## load data        
         self.load_qies()
         self.load_idioms()
-        self.load_unigram()
+        self.load_unigram()        
         self.preprocess_materials()
 
         self.load_character_Svector()
         self.load_character_Mvector()
         self.load_ngram_Svector()
+
+        self.load_variations()
+        
     
     def describe(self):
         mdtext = f"""
@@ -171,6 +175,10 @@ class Materials:
         qie_vectors_iter = filter(lambda item: item[0] in self.ngFreq, qie_vectors.items())
         self.ngramS.update(qie_vectors_iter)
         
-
-
+    def load_variations(self):        
+        variation_path = get_cache_path('cache_ngrams_list', "ngrams_vars_samples.csv")
+        print("load variations from ", variation_path)
+        ng_list = pd.read_csv(variation_path, index_col='ngram')
+        for ridx, row in ng_list.iterrows():              
+            self.variations[ridx] = row["var"]
 
