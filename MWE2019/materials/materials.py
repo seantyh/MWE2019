@@ -30,6 +30,8 @@ class Materials:
         self.ngramS: Dict[NGram, SVector] = {}
         self.variations: Dict[NGram, int] = {}
 
+        self.proper_qie = set()
+
         ## load data        
         self.load_qies()
         self.load_idioms()
@@ -41,7 +43,7 @@ class Materials:
         self.load_ngram_Svector()
 
         self.load_variations()
-        
+        self.load_proper()
     
     def describe(self):
         mdtext = f"""
@@ -181,4 +183,10 @@ class Materials:
         ng_list = pd.read_csv(variation_path, index_col='ngram')
         for ridx, row in ng_list.iterrows():              
             self.variations[ridx] = row["var"]
+        
+    def load_proper(self):
+        qie_proper_path = get_cache_path('qie_list', 'qie_proper.csv')
+        print("Load QIE proper: ", qie_proper_path)
+        proper_list = pd.read_csv(qie_proper_path)
+        self.proper_qie = set(proper_list.ngram)
 
